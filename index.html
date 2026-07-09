@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>הבית של אמא · בקרה ביתית</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Secular+One&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Secular+One&display=swap"></noscript>
+<style>
+:root{
+  --bg:#14110D;
+  --surface:#1E1913;
+  --surface2:#282019;
+  --line:#332A20;
+  --ink:#F3EBDD;
+  --muted:#9C8F7B;
+  --amber:#FFB640;
+  --amber-deep:#C77E14;
+  --danger:#E5654E;
+  --ok:#7BC47F;
+  --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Heebo',system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  padding-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+h1,h2,.display{font-family:'Secular One','Heebo',sans-serif;font-weight:400;letter-spacing:.01em}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(20,17,13,.86);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:14px 18px calc(10px);
+  padding-top:calc(14px + env(safe-area-inset-top));
+  display:flex;align-items:center;gap:12px;
+}
+.h-titles{flex:1;min-width:0}
+.eyebrow{font-size:.72rem;color:var(--muted);letter-spacing:.14em}
+header h1{font-size:1.45rem;line-height:1.15;color:var(--ink)}
+.shabbat-badge{font-size:.74rem;color:var(--amber);margin-top:3px;letter-spacing:.02em}
+.status{display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:#5b5245;transition:background .3s, box-shadow .3s}
+.dot.ok{background:var(--ok);box-shadow:0 0 10px rgba(123,196,127,.7)}
+.dot.err{background:var(--danger);box-shadow:0 0 10px rgba(229,101,78,.7)}
+.iconbtn{
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;cursor:pointer;
+  transition:transform .15s,border-color .2s;flex-shrink:0;
+}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn svg{width:20px;height:20px}
+.iconbtn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- layout ---------- */
+main{padding:18px 16px 8px;max-width:760px;margin-inline:auto}
+.view{display:none}
+.view.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section-label{
+  font-size:.78rem;color:var(--muted);letter-spacing:.12em;margin:6px 2px 12px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- quick actions & search ---------- */
+.quick{display:flex;gap:10px;margin-bottom:16px}
+.search{margin-bottom:14px}
+.search input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 14px;color:var(--ink);font-family:inherit;font-size:.95rem}
+.search input:focus{outline:none;border-color:var(--amber-deep)}
+.search input::placeholder{color:var(--muted)}
+.btn.night{width:100%;margin-bottom:16px;border-color:rgba(255,182,64,.3);justify-content:center}
+.btn.night.confirm{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:700}
+.btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:13px;padding:11px 16px;font-family:inherit;font-size:.95rem;font-weight:500;
+  cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .15s,background .2s,border-color .2s;
+}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#241703;font-weight:700}
+.btn.ghost{background:transparent}
+.btn.grow{flex:1}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+/* ---------- room cards (master view) ---------- */
+.room-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:12px;
+  display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none;
+  transition:transform .12s,border-color .3s,box-shadow .3s;
+}
+.room-card:active{transform:scale(.98)}
+.room-card.lit{
+  border-color:rgba(255,182,64,.35);
+  box-shadow:0 6px 22px -10px rgba(255,150,20,.3);
+}
+.room-power{
+  width:52px;height:52px;border-radius:16px;flex-shrink:0;
+  background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+  display:grid;place-items:center;cursor:pointer;
+  transition:transform .15s,color .3s,border-color .3s,box-shadow .3s,background .3s;
+}
+.room-power:active{transform:scale(.9)}
+.room-power svg{width:24px;height:24px}
+.room-power.on{
+  color:var(--amber);border-color:rgba(255,182,64,.55);
+  background:radial-gradient(120% 120% at 50% 0%, rgba(255,182,64,.22), transparent 70%), var(--surface2);
+  box-shadow:0 0 14px -2px rgba(255,182,64,.45);
+}
+.room-info{flex:1;min-width:0}
+.room-name{font-family:'Secular One','Heebo',sans-serif;font-size:1.15rem;line-height:1.2}
+.room-sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+.room-card .chev{width:20px;height:20px;color:var(--muted);flex-shrink:0}
+
+/* ---------- room drill header ---------- */
+.roomhead{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.roomhead h2{font-size:1.35rem}
+.roomhead .eyebrow{display:block}
+
+/* ---------- light tiles ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.tile{
+  position:relative;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 14px 14px;
+  min-height:118px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:10px;
+  cursor:pointer;user-select:none;
+  transition:box-shadow .35s,border-color .35s,background .35s,transform .12s;
+}
+.tile:active{transform:scale(.965)}
+.tile .t-icon{width:26px;height:26px;color:var(--muted);transition:color .3s,filter .3s}
+.tile .t-name{font-weight:500;font-size:.95rem;line-height:1.3;word-break:break-word}
+.tile .t-state{font-size:.78rem;color:var(--muted);transition:color .3s}
+.tile.on{
+  background:
+    radial-gradient(130% 120% at 78% 8%, rgba(255,182,64,.30), rgba(255,182,64,0) 62%),
+    var(--surface2);
+  border-color:rgba(255,182,64,.45);
+  box-shadow:0 0 0 1px rgba(255,182,64,.18), 0 10px 30px -8px rgba(255,150,20,.35);
+}
+.tile.on .t-icon{color:var(--amber);filter:drop-shadow(0 0 8px rgba(255,182,64,.8))}
+.tile.on .t-state{color:var(--amber)}
+.tile.unavail{opacity:.42;cursor:not-allowed}
+.badge{
+  position:absolute;top:10px;inset-inline-start:10px;
+  font-size:.66rem;background:var(--surface2);border:1px solid var(--line);
+  color:var(--muted);padding:2px 8px;border-radius:999px;
+}
+
+/* ---------- cover cards ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:14px;
+}
+.card.unavail{opacity:.45}
+.card .c-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card .c-name{font-weight:700;font-size:1.02rem}
+.card .c-state{font-size:.8rem;color:var(--muted)}
+.cover-btns{display:flex;gap:10px;margin-bottom:14px}
+.cover-btns .btn{flex:1;font-size:1rem}
+.cover-btns .btn svg{width:18px;height:18px}
+.slider-row{display:flex;align-items:center;gap:12px}
+.slider-row .pct{min-width:52px;text-align:center;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{
+  flex:1;direction:ltr;appearance:none;-webkit-appearance:none;height:6px;border-radius:99px;
+  background:linear-gradient(90deg,var(--amber) var(--fill,0%),var(--line) var(--fill,0%));
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:var(--ink);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--line);
+  cursor:grab;
+}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;background:var(--ink);border:3px solid var(--bg);cursor:grab;
+}
+
+/* ---------- automations ---------- */
+.auto-row{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;
+}
+.auto-info{flex:1;min-width:0}
+.auto-name{font-weight:500;font-size:.98rem}
+.auto-sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+.auto-desc{font-size:.79rem;color:var(--muted);margin-top:3px;line-height:1.45}
+.auto-row.disabled .auto-name{color:var(--muted)}
+.switch{
+  position:relative;width:48px;height:28px;border-radius:99px;background:var(--line);
+  border:none;cursor:pointer;transition:background .25s;flex-shrink:0;
+}
+.switch::after{
+  content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;
+  background:var(--ink);transition:transform .25s;
+}
+.switch.on{background:var(--amber)}
+.switch.on::after{transform:translateX(-20px)}
+.playbtn{
+  width:42px;height:42px;border-radius:13px;flex-shrink:0;
+  background:var(--surface2);border:1px solid var(--line);color:var(--amber);
+  display:grid;place-items:center;cursor:pointer;transition:transform .15s;
+}
+.playbtn:active{transform:scale(.9)}
+.playbtn svg{width:18px;height:18px}
+
+/* ---------- settings ---------- */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px}
+.field .hint{font-size:.74rem;color:var(--muted);margin-top:5px;opacity:.85}
+.input-wrap{position:relative;display:flex}
+input[type=text],input[type=password],input[type=url],input[type=number],select{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;color:var(--ink);font-family:inherit;font-size:.95rem;
+}
+input[type=password],input[type=url]{direction:ltr;text-align:left}
+input[type=number]{direction:ltr;text-align:center}
+input:focus,select:focus{outline:none;border-color:var(--amber-deep)}
+.eye{
+  position:absolute;inset-inline-end:0;top:0;height:100%;width:46px;background:none;border:none;
+  color:var(--muted);cursor:pointer;display:grid;place-items:center;
+}
+.eye svg{width:19px;height:19px}
+.settings-actions{display:flex;gap:10px;margin:4px 0 8px}
+.notice{
+  border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:18px;
+  font-size:.87rem;color:var(--muted);background:var(--surface);
+}
+.notice.warn{border-color:rgba(229,101,78,.5);color:#f0b3a6;background:rgba(229,101,78,.07)}
+.notice b{color:var(--ink)}
+.ent-row{padding:12px 4px;border-bottom:1px solid var(--line)}
+.ent-row:last-child{border-bottom:none}
+.ent-line1{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ent-line1 input[type=checkbox]{width:20px;height:20px;accent-color:var(--amber);flex-shrink:0}
+.ent-orig{flex:1;font-size:.82rem;color:var(--muted);word-break:break-all;direction:ltr;text-align:left}
+.ent-line2{display:flex;gap:8px}
+.ent-line2 input[type=text]{flex:1.4;padding:9px 10px;font-size:.85rem}
+.ent-line2 select{flex:1;padding:9px 8px;font-size:.85rem}
+.ent-line2 input[type=number]{width:66px;padding:9px 4px;font-size:.85rem;flex-shrink:0}
+.subhead{font-size:.8rem;color:var(--amber);margin:20px 2px 6px;letter-spacing:.08em}
+
+/* ---------- empty / skeleton ---------- */
+.empty{
+  text-align:center;color:var(--muted);padding:44px 20px;font-size:.92rem;
+  border:1px dashed var(--line);border-radius:var(--radius);
+}
+.skel{border-radius:var(--radius);min-height:84px;background:var(--surface);position:relative;overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
+.skel::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(243,235,221,.05) 50%,transparent 70%);
+  animation:shimmer 1.4s infinite;
+}
+@keyframes shimmer{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+
+/* ---------- bottom nav ---------- */
+nav{
+  position:fixed;bottom:0;inset-inline:0;z-index:30;
+  background:rgba(20,17,13,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.nav-item{
+  background:none;border:none;color:var(--muted);font-family:inherit;font-size:.66rem;
+  display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+  padding:6px 6px;border-radius:12px;transition:color .2s;min-width:52px;
+}
+.nav-item svg{width:22px;height:22px}
+.nav-item.active{color:var(--amber)}
+.nav-item.active::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--amber)}
+
+/* ---------- log ---------- */
+.log-row{display:flex;gap:10px;align-items:baseline;padding:9px 4px;border-bottom:1px solid var(--line);font-size:.9rem}
+.log-row:last-child{border-bottom:none}
+.log-time{color:var(--muted);font-size:.74rem;min-width:60px;direction:ltr;text-align:left;font-variant-numeric:tabular-nums;flex-shrink:0}
+.log-name{flex:1;min-width:0;word-break:break-word}
+.log-act{font-size:.82rem;flex-shrink:0}
+.log-act.on{color:var(--amber)}
+.log-act.off{color:var(--muted)}
+.log-act.info{color:#8fb7d9}
+
+/* ---------- toast ---------- */
+#toasts{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom));inset-inline:0;z-index:50;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{
+  background:var(--surface2);border:1px solid var(--line);color:var(--ink);
+  padding:10px 18px;border-radius:99px;font-size:.86rem;max-width:88%;
+  animation:toastin .3s cubic-bezier(.34,1.4,.64,1);box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.toast.err{border-color:rgba(229,101,78,.6);color:#f5c0b5}
+.toast.ok{border-color:rgba(255,182,64,.5)}
+@keyframes toastin{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+@media (min-width:560px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-titles">
+    <div class="eyebrow">בקרה ביתית · צפת</div>
+    <h1>הבית של אמא</h1>
+    <div class="shabbat-badge" id="shabbatBadge" style="display:none">🕯️ שבת · המערכת במצב שבת</div>
+  </div>
+  <div class="status"><span class="dot" id="dot" title="מצב חיבור"></span></div>
+  <button class="iconbtn" id="refreshBtn" aria-label="רענון" title="רענון">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+  </button>
+</header>
+
+<main>
+
+  <!-- הבית: חדרים -->
+  <section class="view" id="view-lights">
+    <div id="homeTop">
+      <div class="quick">
+        <button class="btn grow" id="allOn">הדלקת הכל</button>
+        <button class="btn grow ghost" id="allOff">כיבוי הכל</button>
+      </div>
+      <button class="btn night" id="nightBtn">🌙 לילה טוב — כיבוי כל האורות וסגירת כל התריסים</button>
+      <div class="search"><input type="text" id="lightSearch" placeholder="חיפוש מתג או תריס..." autocomplete="off"></div>
+    </div>
+    <div id="homeBody">
+      <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+    </div>
+  </section>
+
+  <!-- תריסים -->
+  <section class="view" id="view-covers">
+    <div class="section-label">כל התריסים</div>
+    <div id="coversList"></div>
+  </section>
+
+  <!-- אוטומציות -->
+  <section class="view" id="view-autos">
+    <div class="section-label">אוטומציות</div>
+    <div id="autosList"></div>
+  </section>
+
+  <!-- יומן חי -->
+  <section class="view" id="view-log">
+    <div class="section-label">יומן חי — מה קורה בבית</div>
+    <div class="notice" style="margin-bottom:12px">
+      כל הדלקה, כיבוי ותזוזה — מהאפליקציה או מהמתג בקיר — מופיעים כאן.
+      מציג 24 שעות אחורה ומתעדכן לבד.
+    </div>
+    <div id="logList"></div>
+  </section>
+
+  <!-- הגדרות -->
+  <section class="view" id="view-settings">
+    <div class="notice" id="welcomeNotice" style="display:none">
+      <b>ברוכים הבאים 👋</b><br>
+      כדי להתחבר לבית צריך שני דברים:<br>
+      1. הכתובת של Home Assistant<br>
+      2. טוקן גישה<br>
+      ממלאים למטה, בודקים חיבור, ושומרים.
+    </div>
+    <div class="notice warn" id="mixedWarn" style="display:none">
+      <b>שימו לב:</b> האתר רץ על חיבור מאובטח
+      (https)
+      אבל הכתובת שהוזנה היא
+      http
+      רגיל.<br>
+      הדפדפן חוסם שילוב כזה. הפתרון: כתובת
+      https
+      של
+      Tailscale
+      או אירוח הקובץ על HA עצמו.
+    </div>
+
+    <div class="section-label">חיבור</div>
+    <div class="field">
+      <label for="cfgUrl">כתובת Home Assistant</label>
+      <input type="url" id="cfgUrl" placeholder="http://100.111.233.81:8123" autocomplete="off" autocapitalize="off">
+      <div class="hint">אם הקובץ יושב על ה-HA עצמו (בתיקיית www) — אפשר להשאיר ריק.</div>
+    </div>
+    <div class="field">
+      <label for="cfgToken">טוקן גישה (Long-Lived Access Token)</label>
+      <div class="input-wrap">
+        <input type="password" id="cfgToken" placeholder="eyJhbGciOi..." autocomplete="off">
+        <button class="eye" id="eyeBtn" aria-label="הצגת הטוקן">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="hint">הטוקן נשמר רק בדפדפן של המכשיר הזה.</div>
+    </div>
+    <div class="settings-actions">
+      <button class="btn grow" id="testBtn">בדיקת חיבור</button>
+      <button class="btn primary grow" id="saveBtn">שמירה</button>
+    </div>
+
+    <div class="subhead">ניהול תצוגה — הצגה, שם, חדר וסדר</div>
+    <div class="notice" style="margin-bottom:10px">
+      סימון ✓ = מופיע במסכים.<br>
+      חדר = לאיזה חדר הפריט שייך.<br>
+      סדר = מספר קטן מופיע ראשון בתוך החדר.
+    </div>
+    <div id="entityManager"><div class="empty">הרשימה תופיע אחרי חיבור מוצלח</div></div>
+
+    <div class="hint" style="text-align:center;margin:26px 0 6px;color:var(--muted)">
+      גרסה 2.8 · לוח הבקרה של הבית בצפת
+    </div>
+  </section>
+
+</main>
+
+<nav>
+  <button class="nav-item active" data-view="lights">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    הבית
+  </button>
+  <button class="nav-item" data-view="covers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18"/><path d="M3 13h18"/><path d="M12 13v8"/></svg>
+    תריסים
+  </button>
+  <button class="nav-item" data-view="autos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+    אוטומציות
+  </button>
+  <button class="nav-item" data-view="log">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
+    יומן
+  </button>
+  <button class="nav-item" data-view="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h0a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h0a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+    הגדרות
+  </button>
+</nav>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= config ================= */
+const CFG_KEY = "beit_ima_cfg_v1";
+const DESC_KEY = "beit_ima_desc_v1";
+const CACHE_KEY = "beit_ima_state_cache_v1";
+const AUTO_HIDE = /child_lock|backlight|indicator|_led\b|do_not_disturb|calibration|motor_reversal|permit_join|permit join|zigbee2mqtt|z2m/i;
+const POLL_MS = 5000;
+
+/* חדרים - לפי המיפוי הסופי של הבית */
+const ROOMS = ["חדר בישול","פינת אוכל וסלון","חוץ","מסדרון","שירותים גדול","שירותים קטן","דוד","חדר יאיר","כללי"];
+
+/* שיוך אוטומטי לחדר - הכלל הראשון שתופס קובע, מדויק לפי רשימת הבית */
+const ROOM_RULES = [
+  [/pinat|ocel|פינת/i, "פינת אוכל וסלון"],
+  [/tipulim|malheder|טיפולים/i, "חוץ"],
+  [/menora|מנורה/i, "חוץ"],
+  [/maavar|מעבר/i, "מסדרון"],
+  [/gadol|גדול/i, "שירותים גדול"],
+  [/meal|haaron|aron|ארון/i, "מסדרון"],
+  [/venta|katan|ונטה|קטן/i, "שירותים קטן"],
+  [/dud|shemesh|boil|דוד|שמש/i, "דוד"],
+  [/bishul|bisulim|בישול/i, "חדר בישול"],
+  [/yair|יאיר/i, "חדר יאיר"],
+  [/saloon|ginna|סלון/i, "פינת אוכל וסלון"],
+  [/hutz|projector|zarkor|חוץ|פרוז/i, "חוץ"]
+];
+
+/* סדר ברירת מחדל בתוך חדר - לפי הסדר שהוגדר */
+const ORDER_HINTS = [
+  /bisulim|tris.*bishul/i,
+  /bishul|בישול/i,
+  /tris.*saloon/i,
+  /pinat|ocel|פינת/i,
+  /lightsaloon/i,
+  /tipulim|malheder|טיפולים/i,
+  /menora|מנורה/i,
+  /maavar|מעבר/i,
+  /meal|haaron|aron|ארון/i,
+  /gadol|גדול/i,
+  /venta|ונטה/i,
+  /katan|קטן/i,
+  /dud|shemesh|boil|דוד|שמש/i,
+  /yairroom/i,
+  /tris.*yair/i,
+  /makrer|מקרר/i,
+  /machshev|מחשב|socket|atorch/i
+];
+
+let cfg = loadCfg();
+let entities = {};
+let inflight = false;
+let pollTimer = null;
+let firstLoadDone = false;
+let lightQuery = "";
+let currentRoom = null;
+let autoDesc = loadDesc();
+let descLoading = false;
+let activityLog = [];
+let logbookLoaded = false;
+let shabbatOn = false;
+
+function loadCfg(){
+  try{
+    const raw = localStorage.getItem(CFG_KEY);
+    if(raw){
+      const c = JSON.parse(raw);
+      return {
+        url: c.url||"", token: c.token||"",
+        vis: c.vis||{}, names: c.names||{},
+        rooms: c.rooms||{}, order: c.order||{}
+      };
+    }
+  }catch(e){}
+  return {url:"", token:"", vis:{}, names:{}, rooms:{}, order:{}};
+}
+function saveCfg(){ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+function loadDesc(){
+  try{ return JSON.parse(localStorage.getItem(DESC_KEY)||"{}"); }catch(e){ return {}; }
+}
+function saveDesc(){ try{ localStorage.setItem(DESC_KEY, JSON.stringify(autoDesc)); }catch(e){} }
+
+/* תמונת מצב אחרונה - לפתיחה מיידית בלי לחכות לשרת */
+function saveStateCache(){
+  try{
+    const slim = Object.values(entities).map(e=>({
+      e: e.entity_id,
+      s: e.state,
+      f: (e.attributes&&e.attributes.friendly_name)||"",
+      p: (e.attributes&&e.attributes.current_position!=null)?e.attributes.current_position:null,
+      l: (e.attributes&&e.attributes.last_triggered)||null,
+      i: (e.attributes&&e.attributes.id)||null
+    }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(slim));
+  }catch(err){}
+}
+function loadStateCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return false;
+    const slim = JSON.parse(raw);
+    if(!Array.isArray(slim)||!slim.length) return false;
+    entities = {};
+    for(const s of slim){
+      entities[s.e] = {
+        entity_id: s.e,
+        state: s.s,
+        attributes: { friendly_name: s.f, current_position: s.p, last_triggered: s.l, id: s.i }
+      };
+    }
+    return true;
+  }catch(err){ return false; }
+}
+
+function baseUrl(){
+  let u = (cfg.url||"").trim().replace(/\/+$/,"");
+  if(!u) u = window.location.origin;
+  return u;
+}
+function hasConfig(){ return !!cfg.token; }
+
+/* ================= api ================= */
+async function api(path, method, body, timeoutMs){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), timeoutMs || 9000);
+  try{
+    const res = await fetch(baseUrl()+path, {
+      method: method||"GET",
+      headers: {
+        "Authorization":"Bearer "+cfg.token,
+        "Content-Type":"application/json"
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    if(res.status===401) throw new Error("AUTH");
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    return await res.json();
+  }catch(err){
+    clearTimeout(t);
+    throw err;
+  }
+}
+const callService = (domain, service, data)=> api(`/api/services/${domain}/${service}`,"POST",data);
+
+/* ================= helpers ================= */
+const domainOf = id => id.split(".")[0];
+const isCtl = id => domainOf(id)==="switch" || domainOf(id)==="light";
+const isCover = id => domainOf(id)==="cover";
+const isScene = id => domainOf(id)==="scene";
+
+/* מעדכן את המסך רק אם באמת השתנה משהו - כדי לא לקטוע גלילה */
+const lastHtml = {};
+function setHtml(el, html){
+  if(lastHtml[el.id]===html) return;
+  lastHtml[el.id]=html;
+  el.innerHTML=html;
+}
+
+/* מקשי רפאים - קיימים בתוכנה אבל לא מחוברים פיזית, מוסתרים כברירת מחדל */
+const PHANTOMS = /(lighthederbishul|lightsaloon|lightyairroom|maavarshirutim)[\s_-]*l[234]\b|shirutimaronl[\s_-]*l[34]\b|saloonginna2[\s_-]*l3\b/i;
+
+function isVisible(id){
+  if(cfg.vis[id]!==undefined) return cfg.vis[id];
+  const d = domainOf(id);
+  /* אוטומציות, סצנות ותריסים תמיד מוצגים - המסנן חל רק על מתגים */
+  if(d==="automation"||d==="scene"||d==="cover") return true;
+  const e = entities[id];
+  const k = (id+" "+((e&&e.attributes&&e.attributes.friendly_name)||"")).toLowerCase();
+  return !AUTO_HIDE.test(k) && !PHANTOMS.test(k);
+}
+function dispName(e){
+  return cfg.names[e.entity_id] || (e.attributes&&e.attributes.friendly_name) || e.entity_id;
+}
+function keyOf(e){
+  return (e.entity_id+" "+((e.attributes&&e.attributes.friendly_name)||"")).toLowerCase();
+}
+function roomOf(e){
+  const id = e.entity_id;
+  if(cfg.rooms[id] && ROOMS.includes(cfg.rooms[id])) return cfg.rooms[id];
+  const k = keyOf(e);
+  for(const [re, room] of ROOM_RULES){
+    if(re.test(k)) return room;
+  }
+  return "כללי";
+}
+function orderOf(e){
+  const id = e.entity_id;
+  if(cfg.order[id]!==undefined && cfg.order[id]!==null && cfg.order[id]!=="") return Number(cfg.order[id]);
+  const k = keyOf(e);
+  for(let i=0;i<ORDER_HINTS.length;i++){
+    if(ORDER_HINTS[i].test(k)) return (i+1)*10;
+  }
+  return 500;
+}
+function sortRoomItems(a,b){
+  const ua = a.state==="unavailable", ub = b.state==="unavailable";
+  if(ua!==ub) return ua?1:-1;
+  const oa = orderOf(a), ob = orderOf(b);
+  if(oa!==ob) return oa-ob;
+  return dispName(a).localeCompare(dispName(b),"he");
+}
+function sortByName(a,b){
+  const ua = a.state==="unavailable", ub = b.state==="unavailable";
+  if(ua!==ub) return ua?1:-1;
+  return dispName(a).localeCompare(dispName(b),"he");
+}
+function relTime(iso){
+  if(!iso) return "";
+  const diff = Date.now()-new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if(m<1) return "ממש עכשיו";
+  if(m<60) return "לפני "+m+" דק׳";
+  const h = Math.floor(m/60);
+  if(h<24) return "לפני "+h+" שע׳";
+  const d = Math.floor(h/24);
+  return "לפני "+d+" ימים";
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function homeItems(){
+  return Object.values(entities).filter(e=>(isCtl(e.entity_id)||isCover(e.entity_id))&&isVisible(e.entity_id));
+}
+
+/* ================= fetch loop ================= */
+async function refresh(manual){
+  if(!hasConfig()){ setDot(""); return; }
+  if(inflight) return;
+  inflight = true;
+  if(manual) document.getElementById("refreshBtn").classList.add("spin");
+  try{
+    const list = await api("/api/states", null, null, firstLoadDone ? 9000 : 25000);
+    const prevEntities = entities;
+    entities = {};
+    for(const e of list){
+      if(e.entity_id.indexOf("issur_melacha")>-1) shabbatOn = (e.state==="on");
+      const d = domainOf(e.entity_id);
+      if(d==="switch"||d==="light"||d==="cover"||d==="automation"||d==="scene") entities[e.entity_id]=e;
+    }
+    diffToLog(prevEntities);
+    setDot("ok");
+    firstLoadDone = true;
+    renderAll();
+    saveStateCache();
+    loadAutoDescs();
+    loadLogbook();
+  }catch(err){
+    setDot("err");
+    if(!firstLoadDone){
+      setHtml(document.getElementById("homeBody"),
+        '<div class="empty">😴 הבית לא עונה כרגע.<br>כנראה האינטרנט בצפת איטי או שנפל.<br><br>ממשיך לנסות אוטומטית כל 5 שניות —<br>ברגע שהקו יחזור, המסך יתמלא לבד.</div>');
+    }
+    if(manual){
+      if(String(err.message)==="AUTH") toast("הטוקן לא תקין או פג תוקף","err");
+      else if(isMixedBlocked()) toast("הדפדפן חוסם: אתר https מול כתובת http","err");
+      else toast("אין חיבור ל-Home Assistant","err");
+    }
+  }finally{
+    inflight = false;
+    document.getElementById("refreshBtn").classList.remove("spin");
+  }
+}
+
+async function loadAutoDescs(){
+  if(descLoading) return;
+  const autos = Object.values(entities).filter(e=>domainOf(e.entity_id)==="automation");
+  const missing = autos.filter(e=>{
+    const cid = e.attributes && e.attributes.id;
+    return cid && autoDesc[cid]===undefined;
+  });
+  if(!missing.length) return;
+  descLoading = true;
+  await Promise.all(missing.map(async e=>{
+    const cid = e.attributes.id;
+    try{
+      const conf = await api("/api/config/automation/config/"+cid);
+      autoDesc[cid] = (conf && conf.description) ? conf.description : "";
+    }catch(err){
+      autoDesc[cid] = "";
+    }
+  }));
+  saveDesc();
+  descLoading = false;
+  renderAutos();
+}
+
+/* יומן חי - זיהוי שינויים בין רענונים */
+function diffToLog(old){
+  if(!old || !Object.keys(old).length) return;
+  const now = Date.now();
+  for(const id in entities){
+    const n = entities[id], o = old[id];
+    if(!o) continue;
+    if(!isVisible(id)) continue;
+    const d = domainOf(id);
+    let text = null, cls = "info";
+    if(d==="automation"){
+      const lo = (o.attributes&&o.attributes.last_triggered)||"";
+      const ln = (n.attributes&&n.attributes.last_triggered)||"";
+      if(ln && ln!==lo){ text = "רצה"; cls = "on"; }
+    }else if(d==="scene"){
+      if(n.state!==o.state && n.state && n.state!=="unknown" && n.state!=="unavailable"){ text = "הופעלה"; cls = "on"; }
+    }else if(n.state!==o.state){
+      if(n.state==="unavailable"){ text = "התנתק"; cls = "off"; }
+      else if(o.state==="unavailable"){ text = "חזר לתקשורת"; cls = "info"; }
+      else if(d==="cover"){
+        text = n.state==="opening"?"נפתח...": n.state==="closing"?"נסגר...": n.state==="open"?"נפתח": n.state==="closed"?"נסגר": null;
+        cls = (n.state==="open"||n.state==="opening")?"on":"off";
+      }else{
+        text = n.state==="on"?"נדלק": n.state==="off"?"כבה": null;
+        cls = n.state==="on"?"on":"off";
+      }
+    }
+    if(text) activityLog.unshift({t:now, name:dispName(n), text, cls});
+  }
+  if(activityLog.length>400) activityLog.length = 400;
+}
+
+/* משיכת היסטוריה של 24 שעות אחרונות מהשרת - פעם אחת */
+async function loadLogbook(){
+  if(logbookLoaded) return;
+  logbookLoaded = true;
+  try{
+    const ids = Object.keys(entities).filter(id=>isVisible(id));
+    if(!ids.length) return;
+    const start = new Date(Date.now()-24*3600*1000).toISOString();
+    const data = await api("/api/logbook/"+encodeURIComponent(start)+"?entity="+encodeURIComponent(ids.join(",")));
+    if(!Array.isArray(data)) return;
+    const mapped = [];
+    for(const it of data){
+      const id = it.entity_id||"";
+      const d = domainOf(id);
+      let text = null, cls = "info";
+      if(it.message && /trigger/i.test(it.message)){ text = "רצה"; cls = "on"; }
+      else if(it.state!=null){
+        const s = it.state;
+        if(s==="unavailable"){ text = "התנתק"; cls = "off"; }
+        else if(d==="cover"){
+          text = s==="opening"?"נפתח...": s==="closing"?"נסגר...": s==="open"?"נפתח": s==="closed"?"נסגר": null;
+          cls = (s==="open"||s==="opening")?"on":"off";
+        }else if(d==="scene"){ text = "הופעלה"; cls = "on"; }
+        else{
+          text = s==="on"?"נדלק": s==="off"?"כבה": null;
+          cls = s==="on"?"on":"off";
+        }
+      }
+      if(!text) continue;
+      const e = entities[id];
+      mapped.push({t:new Date(it.when).getTime(), name:(e?dispName(e):(it.name||id)), text, cls});
+    }
+    activityLog = activityLog.concat(mapped);
+    activityLog.sort((a,b)=>b.t-a.t);
+    if(activityLog.length>400) activityLog.length = 400;
+    renderLog();
+  }catch(err){ /* יומן השרת לא זמין - לא קריטי */ }
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(()=>{
+    if(document.visibilityState==="visible") refresh(false);
+  }, POLL_MS);
+}
+function setDot(s){
+  const d = document.getElementById("dot");
+  d.className = "dot"+(s?" "+s:"");
+}
+function isMixedBlocked(){
+  return location.protocol==="https:" && baseUrl().startsWith("http://");
+}
+
+/* ================= render ================= */
+function renderAll(){
+  const sb = document.getElementById("shabbatBadge");
+  if(sb) sb.style.display = shabbatOn ? "" : "none";
+  renderHome();
+  renderCovers();
+  renderAutos();
+  renderLog();
+  renderEntityManager();
+  document.getElementById("mixedWarn").style.display =
+    (isMixedBlocked() && cfg.url) ? "" : "none";
+}
+
+function svgBulb(){return '<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>';}
+function svgPower(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>';}
+
+function tileHtml(e){
+  const on = e.state==="on", un = e.state==="unavailable";
+  return `<div class="tile ${on?"on":""} ${un?"unavail":""}" data-id="${e.entity_id}" role="button" tabindex="0" aria-label="${escapeHtml(dispName(e))}">
+    ${un?'<span class="badge">לא זמין</span>':""}
+    ${svgBulb()}
+    <div>
+      <div class="t-name">${escapeHtml(dispName(e))}</div>
+      <div class="t-state">${un?"אין קשר":(on?"דולק":"כבוי")}</div>
+    </div>
+  </div>`;
+}
+
+function coverCardHtml(e){
+  const un = e.state==="unavailable";
+  const pos = (e.attributes&&e.attributes.current_position!=null)?e.attributes.current_position:null;
+  const stateHe = un?"אין קשר": e.state==="open"?"פתוח": e.state==="closed"?"סגור": e.state==="opening"?"נפתח...": e.state==="closing"?"נסגר...":"—";
+  return `<div class="card ${un?"unavail":""}" data-id="${e.entity_id}">
+    <div class="c-head">
+      <div class="c-name">${escapeHtml(dispName(e))}</div>
+      <div class="c-state">${stateHe}${pos!=null?" · "+pos+"%":""}</div>
+    </div>
+    <div class="cover-btns">
+      <button class="btn" data-cmd="open_cover" ${un?"disabled":""}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+        פתיחה
+      </button>
+      <button class="btn" data-cmd="stop_cover" ${un?"disabled":""}>
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+        עצירה
+      </button>
+      <button class="btn" data-cmd="close_cover" ${un?"disabled":""}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        סגירה
+      </button>
+    </div>
+    ${pos!=null?`<div class="slider-row">
+      <input type="range" min="0" max="100" step="5" value="${pos}" style="--fill:${pos}%" ${un?"disabled":""} aria-label="מיקום התריס">
+      <span class="pct">${pos}%</span>
+    </div>`:""}
+  </div>`;
+}
+
+/* זרימה מעורבת: אריחי מתגים בגריד, תריסים ככרטיסים מלאים, לפי הסדר */
+function mixedFlowHtml(items){
+  let html = "", buf = [];
+  const flush = ()=>{ if(buf.length){ html += '<div class="grid">'+buf.join("")+'</div>'; buf=[]; } };
+  for(const e of items){
+    if(isCover(e.entity_id)){ flush(); html += coverCardHtml(e); }
+    else buf.push(tileHtml(e));
+  }
+  flush();
+  return html;
+}
+
+function renderHome(){
+  if(!firstLoadDone) return;
+  const body = document.getElementById("homeBody");
+  const top = document.getElementById("homeTop");
+  const all = homeItems();
+
+  /* מצב חיפוש - רשימה שטוחה */
+  if(lightQuery){
+    top.style.display = "";
+    const items = all.filter(e=>dispName(e).toLowerCase().includes(lightQuery)).sort(sortRoomItems);
+    setHtml(body, items.length ? mixedFlowHtml(items)
+      : '<div class="empty">לא נמצא כלום עבור "'+escapeHtml(lightQuery)+'"</div>');
+    return;
+  }
+
+  /* מצב חדר - תתי מתגים */
+  if(currentRoom){
+    top.style.display = "none";
+    const items = all.filter(e=>roomOf(e)===currentRoom).sort(sortRoomItems);
+    setHtml(body, `
+      <div class="roomhead">
+        <button class="iconbtn" id="backBtn" aria-label="חזרה לחדרים">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div>
+          <span class="eyebrow">חדר</span>
+          <h2>${escapeHtml(currentRoom)}</h2>
+        </div>
+      </div>` + (items.length? mixedFlowHtml(items) : '<div class="empty">אין פריטים בחדר הזה</div>'));
+    return;
+  }
+
+  /* מצב ראשי - כרטיסי חדרים */
+  top.style.display = "";
+  if(!all.length){
+    setHtml(body, '<div class="empty">לא נמצאו מתגים.<br>בדקו את החיבור בהגדרות.</div>');
+    return;
+  }
+  let html = "";
+  for(const room of ROOMS){
+    const items = all.filter(e=>roomOf(e)===room);
+    if(!items.length) continue;
+    const lights = items.filter(e=>isCtl(e.entity_id));
+    const covers = items.filter(e=>isCover(e.entity_id));
+    const onCount = lights.filter(e=>e.state==="on").length;
+    const anyOn = onCount>0;
+    const subParts = [];
+    if(lights.length) subParts.push(onCount+" מתוך "+lights.length+" דולקים");
+    if(covers.length) subParts.push(covers.length===1?"תריס אחד":covers.length+" תריסים");
+    html += `<div class="room-card ${anyOn?"lit":""}" data-room="${escapeHtml(room)}" role="button" tabindex="0" aria-label="${escapeHtml(room)}">
+      <button class="room-power ${anyOn?"on":""}" data-room="${escapeHtml(room)}" aria-label="הדלקה או כיבוי של כל ${escapeHtml(room)}" title="מתג ראשי">
+        ${svgPower()}
+      </button>
+      <div class="room-info">
+        <div class="room-name">${escapeHtml(room)}</div>
+        <div class="room-sub">${subParts.join(" · ")||"—"}</div>
+      </div>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </div>`;
+  }
+  setHtml(body, html || '<div class="empty">לא נמצאו פריטים</div>');
+}
+
+function renderCovers(){
+  const box = document.getElementById("coversList");
+  const items = Object.values(entities).filter(e=>isCover(e.entity_id)&&isVisible(e.entity_id)).sort(sortByName);
+  if(!firstLoadDone){ return; }
+  if(!items.length){ setHtml(box,'<div class="empty">לא נמצאו תריסים</div>'); return; }
+  setHtml(box, items.map(coverCardHtml).join(""));
+}
+
+function renderAutos(){
+  const box = document.getElementById("autosList");
+  if(!firstLoadDone){ return; }
+  const items = Object.values(entities).filter(e=>domainOf(e.entity_id)==="automation"&&isVisible(e.entity_id)).sort(sortByName);
+  const scenes = Object.values(entities).filter(e=>isScene(e.entity_id)&&isVisible(e.entity_id)).sort(sortByName);
+  if(!items.length && !scenes.length){ setHtml(box,'<div class="empty">לא נמצאו אוטומציות</div>'); return; }
+  let html = items.map(e=>{
+    const on = e.state==="on";
+    const last = e.attributes&&e.attributes.last_triggered;
+    const cid = e.attributes&&e.attributes.id;
+    const desc = (cid && autoDesc[cid]) ? autoDesc[cid] : "";
+    return `<div class="auto-row ${on?"":"disabled"}" data-id="${e.entity_id}">
+      <button class="playbtn" data-act="trigger" aria-label="הפעלה עכשיו" title="הפעלה עכשיו">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+      </button>
+      <div class="auto-info">
+        <div class="auto-name">${escapeHtml(dispName(e))}</div>
+        ${desc?`<div class="auto-desc">${escapeHtml(desc)}</div>`:""}
+        <div class="auto-sub">${on?"פעילה":"מושבתת"}${last?" · רצה "+relTime(last):""}</div>
+      </div>
+      <button class="switch ${on?"on":""}" data-act="toggle" role="switch" aria-checked="${on}" aria-label="הפעלה או השבתה"></button>
+    </div>`;
+  }).join("");
+  if(scenes.length){
+    html += '<div class="section-label" style="margin-top:24px">סצנות</div>';
+    html += scenes.map(e=>{
+      const last = (e.state && e.state!=="unknown" && e.state!=="unavailable") ? relTime(e.state) : "";
+      return `<div class="auto-row" data-id="${e.entity_id}">
+        <button class="playbtn" data-act="trigger" aria-label="הפעלת סצנה" title="הפעלת סצנה">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+        </button>
+        <div class="auto-info">
+          <div class="auto-name">${escapeHtml(dispName(e))}</div>
+          <div class="auto-sub">סצנה${last?" · הופעלה "+last:""}</div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  setHtml(box, html);
+}
+
+function renderLog(){
+  const box = document.getElementById("logList");
+  if(!box || !firstLoadDone) return;
+  if(!activityLog.length){
+    setHtml(box, '<div class="empty">עוד אין אירועים.<br>לחצו על מתג בבית — והוא יופיע כאן תוך שניות.</div>');
+    return;
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const rows = activityLog.map(en=>{
+    const dt = new Date(en.t);
+    const time = dt.toLocaleTimeString("he-IL",{hour12:false});
+    const day = dt < today ? dt.toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit"})+" · " : "";
+    return `<div class="log-row"><span class="log-time">${day}${time}</span><span class="log-name">${escapeHtml(en.name)}</span><span class="log-act ${en.cls}">${escapeHtml(en.text)}</span></div>`;
+  }).join("");
+  setHtml(box, rows);
+}
+
+function renderEntityManager(){
+  const box = document.getElementById("entityManager");
+  const all = Object.values(entities);
+  if(!all.length){ setHtml(box,'<div class="empty">הרשימה תופיע אחרי חיבור מוצלח</div>'); return; }
+  const groups = [
+    ["תאורה ומתגים", all.filter(e=>isCtl(e.entity_id)), true],
+    ["תריסים", all.filter(e=>isCover(e.entity_id)), true],
+    ["אוטומציות", all.filter(e=>domainOf(e.entity_id)==="automation"), false],
+    ["סצנות", all.filter(e=>isScene(e.entity_id)), false]
+  ];
+  let html = "";
+  for(const [title, list, withRoom] of groups){
+    if(!list.length) continue;
+    html += `<div class="subhead">${title}</div>`;
+    html += list.sort(sortByName).map(e=>{
+      const id = e.entity_id;
+      const roomOpts = ROOMS.map(r=>`<option value="${escapeHtml(r)}" ${roomOf(e)===r?"selected":""}>${escapeHtml(r)}</option>`).join("");
+      const ordVal = cfg.order[id]!==undefined ? cfg.order[id] : "";
+      return `<div class="ent-row" data-id="${id}">
+        <div class="ent-line1">
+          <input type="checkbox" ${isVisible(id)?"checked":""} aria-label="הצגה">
+          <span class="ent-orig">${escapeHtml((e.attributes&&e.attributes.friendly_name)||id)}</span>
+        </div>
+        <div class="ent-line2">
+          <input type="text" placeholder="שם בעברית" value="${escapeHtml(cfg.names[id]||"")}">
+          ${withRoom?`<select class="ent-room" aria-label="חדר">${roomOpts}</select>
+          <input type="number" class="ent-order" min="1" max="999" placeholder="סדר" value="${ordVal}" aria-label="סדר">`:""}
+        </div>
+      </div>`;
+    }).join("");
+  }
+  setHtml(box, html);
+}
+
+/* ================= actions ================= */
+async function toggleEntity(id){
+  const e = entities[id];
+  if(!e || e.state==="unavailable") return;
+  const domain = domainOf(id);
+  const target = e.state==="on" ? "turn_off" : "turn_on";
+  e.state = e.state==="on"?"off":"on";
+  renderHome();
+  try{
+    await callService(domain, target, {entity_id:id});
+  }catch(err){
+    e.state = e.state==="on"?"off":"on";
+    renderHome();
+    toast("הפקודה לא עברה","err");
+  }
+}
+
+async function bulkSet(items, turnOn, label){
+  const list = items.filter(e=>e.state!=="unavailable");
+  if(!list.length) return;
+  list.forEach(e=>{ e.state = turnOn?"on":"off"; });
+  renderHome();
+  toast((turnOn?"מדליק ":"מכבה ")+label,"ok");
+  try{
+    await Promise.all(list.map(e=>callService(domainOf(e.entity_id), turnOn?"turn_on":"turn_off", {entity_id:e.entity_id})));
+  }catch(err){
+    toast("חלק מהפקודות לא עברו","err");
+    refresh(false);
+  }
+}
+function bulkLights(turnOn){
+  const items = homeItems().filter(e=>isCtl(e.entity_id));
+  bulkSet(items, turnOn, "את כל הבית");
+}
+function roomBulk(room){
+  const lights = homeItems().filter(e=>isCtl(e.entity_id)&&roomOf(e)===room);
+  const anyOn = lights.some(e=>e.state==="on");
+  bulkSet(lights, !anyOn, room);
+}
+
+async function coverCmd(id, cmd){
+  try{ await callService("cover", cmd, {entity_id:id}); toast("נשלח","ok"); }
+  catch(err){ toast("הפקודה לא עברה","err"); }
+}
+async function coverPos(id, pos){
+  try{ await callService("cover","set_cover_position",{entity_id:id, position:Number(pos)}); }
+  catch(err){ toast("הפקודה לא עברה","err"); }
+}
+
+async function autoAction(id, act){
+  const e = entities[id];
+  if(!e) return;
+  try{
+    if(isScene(id)){
+      await callService("scene","turn_on",{entity_id:id});
+      toast("הסצנה הופעלה","ok");
+    }else if(act==="trigger"){
+      await callService("automation","trigger",{entity_id:id});
+      toast("האוטומציה הופעלה","ok");
+    }else{
+      const target = e.state==="on"?"turn_off":"turn_on";
+      e.state = e.state==="on"?"off":"on";
+      renderAutos();
+      await callService("automation",target,{entity_id:id});
+    }
+  }catch(err){
+    toast("הפקודה לא עברה","err");
+    refresh(false);
+  }
+}
+
+/* לילה טוב - כיבוי כל האורות וסגירת כל התריסים */
+async function goodNight(){
+  const lights = homeItems().filter(e=>isCtl(e.entity_id)&&e.state!=="unavailable");
+  const covers = homeItems().filter(e=>isCover(e.entity_id)&&e.state!=="unavailable");
+  if(!lights.length && !covers.length) return;
+  lights.forEach(e=>{ e.state="off"; });
+  covers.forEach(e=>{ e.state="closing"; });
+  renderHome(); renderCovers();
+  toast("לילה טוב 🌙 מכבה אורות וסוגר תריסים","ok");
+  try{
+    await Promise.all([
+      ...lights.map(e=>callService(domainOf(e.entity_id),"turn_off",{entity_id:e.entity_id})),
+      ...covers.map(e=>callService("cover","close_cover",{entity_id:e.entity_id}))
+    ]);
+  }catch(err){
+    toast("חלק מהפקודות לא עברו","err");
+    refresh(false);
+  }
+}
+
+/* ================= events ================= */
+const homeBody = document.getElementById("homeBody");
+
+homeBody.addEventListener("click", ev=>{
+  const power = ev.target.closest(".room-power");
+  if(power){ ev.stopPropagation(); roomBulk(power.dataset.room); return; }
+  const back = ev.target.closest("#backBtn");
+  if(back){ currentRoom = null; renderHome(); return; }
+  const roomCard = ev.target.closest(".room-card");
+  if(roomCard){ currentRoom = roomCard.dataset.room; renderHome(); return; }
+  const cmd = ev.target.closest("button[data-cmd]");
+  if(cmd){ coverCmd(cmd.closest(".card").dataset.id, cmd.dataset.cmd); return; }
+  const tile = ev.target.closest(".tile");
+  if(tile) toggleEntity(tile.dataset.id);
+});
+homeBody.addEventListener("keydown", ev=>{
+  if(ev.key!=="Enter"&&ev.key!==" ") return;
+  const tile = ev.target.closest(".tile");
+  if(tile){ ev.preventDefault(); toggleEntity(tile.dataset.id); return; }
+  const roomCard = ev.target.closest(".room-card");
+  if(roomCard){ ev.preventDefault(); currentRoom = roomCard.dataset.room; renderHome(); }
+});
+homeBody.addEventListener("input", ev=>{
+  if(ev.target.type==="range"){
+    ev.target.style.setProperty("--fill", ev.target.value+"%");
+    const pct = ev.target.closest(".slider-row").querySelector(".pct");
+    if(pct) pct.textContent = ev.target.value+"%";
+  }
+});
+homeBody.addEventListener("change", ev=>{
+  if(ev.target.type==="range"){
+    coverPos(ev.target.closest(".card").dataset.id, ev.target.value);
+  }
+});
+
+document.getElementById("allOn").addEventListener("click", ()=>bulkLights(true));
+document.getElementById("allOff").addEventListener("click", ()=>bulkLights(false));
+
+let nightArmed = false, nightTimer = null;
+const nightBtn = document.getElementById("nightBtn");
+function nightReset(){
+  nightArmed = false;
+  clearTimeout(nightTimer);
+  nightBtn.classList.remove("confirm");
+  nightBtn.textContent = "🌙 לילה טוב — כיבוי כל האורות וסגירת כל התריסים";
+}
+nightBtn.addEventListener("click", ()=>{
+  if(!nightArmed){
+    nightArmed = true;
+    nightBtn.classList.add("confirm");
+    nightBtn.textContent = "בטוחים? לחיצה נוספת מכבה וסוגרת הכל";
+    nightTimer = setTimeout(nightReset, 4000);
+    return;
+  }
+  nightReset();
+  goodNight();
+});
+document.getElementById("lightSearch").addEventListener("input", ev=>{
+  lightQuery = ev.target.value.trim().toLowerCase();
+  renderHome();
+});
+
+document.getElementById("coversList").addEventListener("click", ev=>{
+  const btn = ev.target.closest("button[data-cmd]");
+  if(!btn) return;
+  coverCmd(btn.closest(".card").dataset.id, btn.dataset.cmd);
+});
+document.getElementById("coversList").addEventListener("input", ev=>{
+  if(ev.target.type==="range"){
+    ev.target.style.setProperty("--fill", ev.target.value+"%");
+    const pct = ev.target.closest(".slider-row").querySelector(".pct");
+    if(pct) pct.textContent = ev.target.value+"%";
+  }
+});
+document.getElementById("coversList").addEventListener("change", ev=>{
+  if(ev.target.type==="range"){
+    coverPos(ev.target.closest(".card").dataset.id, ev.target.value);
+  }
+});
+
+document.getElementById("autosList").addEventListener("click", ev=>{
+  const btn = ev.target.closest("button[data-act]");
+  if(!btn) return;
+  autoAction(btn.closest(".auto-row").dataset.id, btn.dataset.act);
+});
+
+document.getElementById("entityManager").addEventListener("change", ev=>{
+  const row = ev.target.closest(".ent-row");
+  if(!row) return;
+  const id = row.dataset.id;
+  if(ev.target.type==="checkbox"){
+    cfg.vis[id] = ev.target.checked;
+  }else if(ev.target.classList.contains("ent-room")){
+    cfg.rooms[id] = ev.target.value;
+  }else if(ev.target.classList.contains("ent-order")){
+    const v = ev.target.value.trim();
+    if(v==="") delete cfg.order[id];
+    else cfg.order[id] = Number(v);
+  }else if(ev.target.type==="text"){
+    const v = ev.target.value.trim();
+    if(v) cfg.names[id]=v; else delete cfg.names[id];
+  }
+  saveCfg();
+  renderHome(); renderCovers(); renderAutos();
+});
+
+document.getElementById("refreshBtn").addEventListener("click", ()=>refresh(true));
+
+document.getElementById("eyeBtn").addEventListener("click", ()=>{
+  const inp = document.getElementById("cfgToken");
+  inp.type = inp.type==="password"?"text":"password";
+});
+
+document.getElementById("testBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("testBtn");
+  applyFormToCfg(false);
+  btn.disabled = true; btn.textContent = "בודק...";
+  try{
+    await api("/api/");
+    toast("החיבור תקין ✓","ok");
+    setDot("ok");
+  }catch(err){
+    setDot("err");
+    if(String(err.message)==="AUTH") toast("הטוקן לא תקין","err");
+    else if(isMixedBlocked()) toast("חסימת דפדפן: https מול http — ראו אזהרה למעלה","err");
+    else toast("לא הצלחתי להגיע לכתובת","err");
+    document.getElementById("mixedWarn").style.display = isMixedBlocked()&&cfg.url ? "" : "none";
+  }finally{
+    btn.disabled = false; btn.textContent = "בדיקת חיבור";
+  }
+});
+
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  applyFormToCfg(true);
+  toast("נשמר ✓","ok");
+  refresh(true).then(startPolling);
+});
+
+function applyFormToCfg(persist){
+  cfg.url = document.getElementById("cfgUrl").value.trim();
+  cfg.token = document.getElementById("cfgToken").value.trim();
+  if(persist) saveCfg();
+}
+
+/* nav */
+document.querySelectorAll(".nav-item").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const v = btn.dataset.view;
+    if(v==="lights"){
+      currentRoom = null;
+      lightQuery = "";
+      const s = document.getElementById("lightSearch");
+      if(s) s.value = "";
+      if(firstLoadDone) renderHome();
+    }
+    document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
+    document.getElementById("view-"+v).classList.add("active");
+  });
+});
+function showView(v){
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
+  document.querySelectorAll(".view").forEach(s=>s.classList.toggle("active", s.id==="view-"+v));
+}
+
+/* toast */
+function toast(msg, type){
+  const box = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast"+(type?" "+type:"");
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transition="opacity .4s"; }, 2600);
+  setTimeout(()=>el.remove(), 3100);
+}
+
+/* ================= init ================= */
+document.getElementById("cfgUrl").value = cfg.url;
+document.getElementById("cfgToken").value = cfg.token;
+
+if(!hasConfig()){
+  document.getElementById("welcomeNotice").style.display = "";
+  showView("settings");
+}else{
+  showView("lights");
+  if(loadStateCache()){
+    firstLoadDone = true;
+    renderAll();
+  }
+  refresh(true);
+}
+startPolling();
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="visible" && hasConfig()) refresh(false);
+});
+
+/* שמירת האפליקציה במכשיר - המסך עולה מיידית גם ברשת גרועה */
+if("serviceWorker" in navigator && window.isSecureContext){
+  navigator.serviceWorker.register("/local/sw.js").catch(()=>{});
+}
+
+})();
+</script>
+</body>
+</html>
