@@ -52,6 +52,9 @@ header{
 .eyebrow{font-size:.72rem;color:var(--muted);letter-spacing:.14em}
 header h1{font-size:1.45rem;line-height:1.15;color:var(--ink)}
 .shabbat-badge{font-size:.74rem;color:var(--amber);margin-top:3px;letter-spacing:.02em}
+.sync-note{font-size:.7rem;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.sync-note.live{color:var(--ok)}
+.sync-note.stale{color:var(--danger)}
 .status{display:flex;align-items:center;gap:8px}
 .dot{width:10px;height:10px;border-radius:50%;background:#5b5245;transition:background .3s, box-shadow .3s}
 .dot.ok{background:var(--ok);box-shadow:0 0 10px rgba(123,196,127,.7)}
@@ -76,6 +79,15 @@ main{padding:18px 16px 8px;max-width:760px;margin-inline:auto}
   display:flex;align-items:center;gap:10px;
 }
 .section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- stale bar - התרעה כשהנתונים לא חיים ---------- */
+.stalebar{
+  background:rgba(229,101,78,.1);border:1px solid rgba(229,101,78,.5);
+  color:#f5c0b5;border-radius:14px;padding:12px 14px;margin:0 0 14px;
+  font-size:.86rem;line-height:1.5;display:flex;align-items:center;gap:10px;
+}
+.stalebar span{flex:1}
+.stalebar .btn{padding:7px 12px;min-height:38px;font-size:.82rem;flex-shrink:0}
 
 /* ---------- quick actions & search ---------- */
 .quick{display:flex;gap:10px;margin-bottom:16px}
@@ -164,6 +176,7 @@ main{padding:18px 16px 8px;max-width:760px;margin-inline:auto}
   font-size:.66rem;background:var(--surface2);border:1px solid var(--line);
   color:var(--muted);padding:2px 8px;border-radius:999px;
 }
+.badge.new{color:#241703;background:var(--amber);border-color:var(--amber);font-weight:700}
 
 /* ---------- cover cards ---------- */
 .card{
@@ -322,6 +335,7 @@ nav{
     <div class="eyebrow">בקרה ביתית · צפת</div>
     <h1>הבית של אמא</h1>
     <div class="shabbat-badge" id="shabbatBadge" style="display:none">🕯️ שבת · המערכת במצב שבת</div>
+    <div class="sync-note" id="syncNote"></div>
   </div>
   <div class="status"><span class="dot" id="dot" title="מצב חיבור"></span></div>
   <button class="iconbtn" id="refreshBtn" aria-label="רענון" title="רענון">
@@ -330,6 +344,11 @@ nav{
 </header>
 
 <main>
+
+  <div class="stalebar" id="staleBar" style="display:none" role="alert">
+    <span id="staleMsg"></span>
+    <button class="btn" id="staleRetry">נסה עכשיו</button>
+  </div>
 
   <!-- הבית: חדרים -->
   <section class="view" id="view-lights">
@@ -377,17 +396,13 @@ nav{
       2. טוקן גישה<br>
       ממלאים למטה, בודקים חיבור, ושומרים.
     </div>
-    <div class="notice warn" id="mixedWarn" style="display:none">
-      <b>שימו לב:</b> האתר רץ על חיבור מאובטח
-      (https)
-      אבל הכתובת שהוזנה היא
+    <div class="notice" id="mixedWarn" style="display:none">
+      <b>לתשומת לב:</b> שמורה כאן כתובת
       http
-      רגיל.<br>
-      הדפדפן חוסם שילוב כזה. הפתרון: כתובת
+      אבל הדף הזה רץ על
       https
-      של
-      Tailscale
-      או אירוח הקובץ על HA עצמו.
+      — הדפדפן לא מרשה את השילוב, אז הדף מתעלם מהכתובת ומתחבר דרך הכתובת של האתר עצמו.
+      הכל עובד; אפשר גם פשוט למחוק את הכתובת ולהשאיר ריק.
     </div>
 
     <div class="section-label">חיבור</div>
@@ -410,17 +425,20 @@ nav{
       <button class="btn grow" id="testBtn">בדיקת חיבור</button>
       <button class="btn primary grow" id="saveBtn">שמירה</button>
     </div>
+    <div class="notice" id="connInfo" style="display:none"></div>
 
     <div class="subhead">ניהול תצוגה — הצגה, שם, חדר וסדר</div>
     <div class="notice" style="margin-bottom:10px">
       סימון ✓ = מופיע במסכים.<br>
       חדר = לאיזה חדר הפריט שייך.<br>
-      סדר = מספר קטן מופיע ראשון בתוך החדר.
+      סדר = מספר קטן מופיע ראשון בתוך החדר.<br>
+      <b>מתג שלא רואים במסכים?</b> חפשו אותו כאן — הרשימה כוללת גם מוסתרים. סימון ✓ מחזיר אותו.
     </div>
+    <div class="search"><input type="text" id="entSearch" placeholder="חיפוש בכל הישויות — כולל מוסתרות..." autocomplete="off"></div>
     <div id="entityManager"><div class="empty">הרשימה תופיע אחרי חיבור מוצלח</div></div>
 
     <div class="hint" style="text-align:center;margin:26px 0 6px;color:var(--muted)">
-      גרסה 2.8 · לוח הבקרה של הבית בצפת
+      גרסה 3.0 · מציג חי מהבית ומתריע כשאין קשר · צפת
     </div>
   </section>
 
@@ -459,8 +477,10 @@ nav{
 const CFG_KEY = "beit_ima_cfg_v1";
 const DESC_KEY = "beit_ima_desc_v1";
 const CACHE_KEY = "beit_ima_state_cache_v1";
+const FIRST_KEY = "beit_ima_first_seen_v1";
 const AUTO_HIDE = /child_lock|backlight|indicator|_led\b|do_not_disturb|calibration|motor_reversal|permit_join|permit join|zigbee2mqtt|z2m/i;
 const POLL_MS = 5000;
+const NEW_MS = 7*24*3600*1000; /* תגית "חדש" - שבוע */
 
 /* חדרים - לפי המיפוי הסופי של הבית */
 const ROOMS = ["חדר בישול","פינת אוכל וסלון","חוץ","מסדרון","שירותים גדול","שירותים קטן","דוד","חדר יאיר","כללי"];
@@ -514,6 +534,11 @@ let descLoading = false;
 let activityLog = [];
 let logbookLoaded = false;
 let shabbatOn = false;
+let lastSync = 0;          /* מתי בפעם האחרונה הגיעו נתונים חיים */
+let lastErr = "";          /* הסיבה האחרונה לכישלון: AUTH / NET */
+let sessionHadResult = false; /* האם כבר היה ניסיון שהסתיים מאז שהדף נפתח */
+let entFilter = "";
+let firstSeen = loadFirst();
 
 function loadCfg(){
   try{
@@ -534,8 +559,12 @@ function loadDesc(){
   try{ return JSON.parse(localStorage.getItem(DESC_KEY)||"{}"); }catch(e){ return {}; }
 }
 function saveDesc(){ try{ localStorage.setItem(DESC_KEY, JSON.stringify(autoDesc)); }catch(e){} }
+function loadFirst(){
+  try{ return JSON.parse(localStorage.getItem(FIRST_KEY)||"{}"); }catch(e){ return {}; }
+}
+function saveFirst(){ try{ localStorage.setItem(FIRST_KEY, JSON.stringify(firstSeen)); }catch(e){} }
 
-/* תמונת מצב אחרונה - לפתיחה מיידית בלי לחכות לשרת */
+/* תמונת מצב אחרונה - לפתיחה מיידית בלי לחכות לשרת, כולל חותמת זמן */
 function saveStateCache(){
   try{
     const slim = Object.values(entities).map(e=>({
@@ -546,15 +575,17 @@ function saveStateCache(){
       l: (e.attributes&&e.attributes.last_triggered)||null,
       i: (e.attributes&&e.attributes.id)||null
     }));
-    localStorage.setItem(CACHE_KEY, JSON.stringify(slim));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({t:lastSync, list:slim}));
   }catch(err){}
 }
 function loadStateCache(){
   try{
     const raw = localStorage.getItem(CACHE_KEY);
     if(!raw) return false;
-    const slim = JSON.parse(raw);
+    const obj = JSON.parse(raw);
+    const slim = Array.isArray(obj) ? obj : (obj && obj.list);
     if(!Array.isArray(slim)||!slim.length) return false;
+    if(!Array.isArray(obj) && obj.t) lastSync = obj.t;
     entities = {};
     for(const s of slim){
       entities[s.e] = {
@@ -569,8 +600,14 @@ function loadStateCache(){
 
 function baseUrl(){
   let u = (cfg.url||"").trim().replace(/\/+$/,"");
-  if(!u) u = window.location.origin;
+  if(!u) return window.location.origin;
+  /* דף https לא יכול לדבר עם כתובת http - הדפדפן חוסם.
+     במקום להיתקע בשקט, מתעלמים מהכתובת ומתחברים דרך האתר עצמו. */
+  if(location.protocol==="https:" && u.startsWith("http://")) return window.location.origin;
   return u;
+}
+function httpIgnored(){
+  return location.protocol==="https:" && (cfg.url||"").trim().startsWith("http://");
 }
 function hasConfig(){ return !!cfg.token; }
 
@@ -581,6 +618,7 @@ async function api(path, method, body, timeoutMs){
   try{
     const res = await fetch(baseUrl()+path, {
       method: method||"GET",
+      cache: "no-store",
       headers: {
         "Authorization":"Bearer "+cfg.token,
         "Content-Type":"application/json"
@@ -630,6 +668,10 @@ function dispName(e){
 }
 function keyOf(e){
   return (e.entity_id+" "+((e.attributes&&e.attributes.friendly_name)||"")).toLowerCase();
+}
+function isNew(id){
+  const t = firstSeen[id];
+  return !!t && (Date.now()-t) < NEW_MS;
 }
 function roomOf(e){
   const id = e.entity_id;
@@ -695,6 +737,16 @@ async function refresh(manual){
       if(d==="switch"||d==="light"||d==="cover"||d==="automation"||d==="scene") entities[e.entity_id]=e;
     }
     diffToLog(prevEntities);
+    /* חותמת חיים + סימון "נראה לראשונה" לכל ישות חדשה */
+    lastSync = Date.now();
+    lastErr = "";
+    sessionHadResult = true;
+    const firstRun = !Object.keys(firstSeen).length;
+    let firstChanged = false;
+    for(const id in entities){
+      if(firstSeen[id]===undefined){ firstSeen[id] = firstRun ? 0 : Date.now(); firstChanged = true; }
+    }
+    if(firstChanged) saveFirst();
     setDot("ok");
     firstLoadDone = true;
     renderAll();
@@ -702,14 +754,16 @@ async function refresh(manual){
     loadAutoDescs();
     loadLogbook();
   }catch(err){
+    lastErr = String(err.message)==="AUTH" ? "AUTH" : "NET";
+    sessionHadResult = true;
     setDot("err");
+    renderFreshness();
     if(!firstLoadDone){
       setHtml(document.getElementById("homeBody"),
         '<div class="empty">😴 הבית לא עונה כרגע.<br>כנראה האינטרנט בצפת איטי או שנפל.<br><br>ממשיך לנסות אוטומטית כל 5 שניות —<br>ברגע שהקו יחזור, המסך יתמלא לבד.</div>');
     }
     if(manual){
-      if(String(err.message)==="AUTH") toast("הטוקן לא תקין או פג תוקף","err");
-      else if(isMixedBlocked()) toast("הדפדפן חוסם: אתר https מול כתובת http","err");
+      if(lastErr==="AUTH") toast("הטוקן לא תקין או פג תוקף","err");
       else toast("אין חיבור ל-Home Assistant","err");
     }
   }finally{
@@ -822,21 +876,58 @@ function setDot(s){
   const d = document.getElementById("dot");
   d.className = "dot"+(s?" "+s:"");
 }
-function isMixedBlocked(){
-  return location.protocol==="https:" && baseUrl().startsWith("http://");
-}
 
 /* ================= render ================= */
 function renderAll(){
   const sb = document.getElementById("shabbatBadge");
   if(sb) sb.style.display = shabbatOn ? "" : "none";
+  renderFreshness();
   renderHome();
   renderCovers();
   renderAutos();
   renderLog();
   renderEntityManager();
-  document.getElementById("mixedWarn").style.display =
-    (isMixedBlocked() && cfg.url) ? "" : "none";
+  updateConnNotices();
+}
+
+/* שקיפות מלאה: מתי הנתונים עודכנו באמת, והתרעה כשמוצגת תמונה ישנה */
+function renderFreshness(){
+  const sn = document.getElementById("syncNote");
+  const bar = document.getElementById("staleBar");
+  const msg = document.getElementById("staleMsg");
+  if(!sn||!bar||!msg) return;
+  if(!hasConfig()){ sn.textContent=""; sn.className="sync-note"; bar.style.display="none"; return; }
+  const t = lastSync ? new Date(lastSync).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"}) : "";
+  if(!sessionHadResult){
+    sn.className = "sync-note";
+    sn.textContent = "מתחבר לבית...";
+    bar.style.display = "none";
+    return;
+  }
+  const fresh = !lastErr && lastSync && (Date.now()-lastSync) < (POLL_MS*3+2000);
+  if(fresh){
+    sn.className = "sync-note live";
+    sn.textContent = "מעודכן חי · "+t;
+    bar.style.display = "none";
+  }else{
+    sn.className = "sync-note stale";
+    sn.textContent = t ? "תמונה ישנה מ-"+t : "אין נתונים חיים";
+    msg.textContent = (lastErr==="AUTH")
+      ? "הטוקן לא תקין או פג תוקף — צריך להזין חדש בהגדרות. עד אז מוצגת תמונה ישנה"+(t?" מ-"+t:"")+"."
+      : "אין קשר חי לבית כרגע — מה שמוצג הוא תמונה"+(t?" מ-"+t:" ישנה")+". ממשיך לנסות כל 5 שניות; ברגע שהקו יחזור הכל יתעדכן לבד.";
+    bar.style.display = "";
+  }
+}
+
+function updateConnNotices(){
+  const mw = document.getElementById("mixedWarn");
+  if(mw) mw.style.display = httpIgnored() ? "" : "none";
+  const ci = document.getElementById("connInfo");
+  if(ci){
+    ci.style.display = "";
+    ci.innerHTML = 'מחובר אל: <b style="direction:ltr;unicode-bidi:embed">'+escapeHtml(baseUrl())+'</b><br>'+
+      'עדכון חי אחרון: <b>'+(lastSync ? new Date(lastSync).toLocaleString("he-IL") : "עוד לא היה")+'</b>';
+  }
 }
 
 function svgBulb(){return '<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>';}
@@ -845,7 +936,7 @@ function svgPower(){return '<svg viewBox="0 0 24 24" fill="none" stroke="current
 function tileHtml(e){
   const on = e.state==="on", un = e.state==="unavailable";
   return `<div class="tile ${on?"on":""} ${un?"unavail":""}" data-id="${e.entity_id}" role="button" tabindex="0" aria-label="${escapeHtml(dispName(e))}">
-    ${un?'<span class="badge">לא זמין</span>':""}
+    ${un?'<span class="badge">לא זמין</span>':(isNew(e.entity_id)?'<span class="badge new">חדש</span>':"")}
     ${svgBulb()}
     <div>
       <div class="t-name">${escapeHtml(dispName(e))}</div>
@@ -858,9 +949,10 @@ function coverCardHtml(e){
   const un = e.state==="unavailable";
   const pos = (e.attributes&&e.attributes.current_position!=null)?e.attributes.current_position:null;
   const stateHe = un?"אין קשר": e.state==="open"?"פתוח": e.state==="closed"?"סגור": e.state==="opening"?"נפתח...": e.state==="closing"?"נסגר...":"—";
+  const newBadge = (!un && isNew(e.entity_id)) ? ' <span class="badge new" style="position:static">חדש</span>' : "";
   return `<div class="card ${un?"unavail":""}" data-id="${e.entity_id}">
     <div class="c-head">
-      <div class="c-name">${escapeHtml(dispName(e))}</div>
+      <div class="c-name">${escapeHtml(dispName(e))}${newBadge}</div>
       <div class="c-state">${stateHe}${pos!=null?" · "+pos+"%":""}</div>
     </div>
     <div class="cover-btns">
@@ -942,9 +1034,11 @@ function renderHome(){
     const covers = items.filter(e=>isCover(e.entity_id));
     const onCount = lights.filter(e=>e.state==="on").length;
     const anyOn = onCount>0;
+    const hasNew = items.some(e=>isNew(e.entity_id));
     const subParts = [];
     if(lights.length) subParts.push(onCount+" מתוך "+lights.length+" דולקים");
     if(covers.length) subParts.push(covers.length===1?"תריס אחד":covers.length+" תריסים");
+    if(hasNew) subParts.push("✨ יש חדש");
     html += `<div class="room-card ${anyOn?"lit":""}" data-room="${escapeHtml(room)}" role="button" tabindex="0" aria-label="${escapeHtml(room)}">
       <button class="room-power ${anyOn?"on":""}" data-room="${escapeHtml(room)}" aria-label="הדלקה או כיבוי של כל ${escapeHtml(room)}" title="מתג ראשי">
         ${svgPower()}
@@ -1029,11 +1123,13 @@ function renderEntityManager(){
   const box = document.getElementById("entityManager");
   const all = Object.values(entities);
   if(!all.length){ setHtml(box,'<div class="empty">הרשימה תופיע אחרי חיבור מוצלח</div>'); return; }
+  const q = entFilter;
+  const match = e => !q || (dispName(e)+" "+keyOf(e)).toLowerCase().includes(q);
   const groups = [
-    ["תאורה ומתגים", all.filter(e=>isCtl(e.entity_id)), true],
-    ["תריסים", all.filter(e=>isCover(e.entity_id)), true],
-    ["אוטומציות", all.filter(e=>domainOf(e.entity_id)==="automation"), false],
-    ["סצנות", all.filter(e=>isScene(e.entity_id)), false]
+    ["תאורה ומתגים", all.filter(e=>isCtl(e.entity_id)&&match(e)), true],
+    ["תריסים", all.filter(e=>isCover(e.entity_id)&&match(e)), true],
+    ["אוטומציות", all.filter(e=>domainOf(e.entity_id)==="automation"&&match(e)), false],
+    ["סצנות", all.filter(e=>isScene(e.entity_id)&&match(e)), false]
   ];
   let html = "";
   for(const [title, list, withRoom] of groups){
@@ -1046,7 +1142,7 @@ function renderEntityManager(){
       return `<div class="ent-row" data-id="${id}">
         <div class="ent-line1">
           <input type="checkbox" ${isVisible(id)?"checked":""} aria-label="הצגה">
-          <span class="ent-orig">${escapeHtml((e.attributes&&e.attributes.friendly_name)||id)}</span>
+          <span class="ent-orig">${escapeHtml((e.attributes&&e.attributes.friendly_name)||id)}${isNew(id)?' <span class="badge new" style="position:static">חדש</span>':""}</span>
         </div>
         <div class="ent-line2">
           <input type="text" placeholder="שם בעברית" value="${escapeHtml(cfg.names[id]||"")}">
@@ -1056,7 +1152,7 @@ function renderEntityManager(){
       </div>`;
     }).join("");
   }
-  setHtml(box, html);
+  setHtml(box, html || '<div class="empty">לא נמצא כלום עבור "'+escapeHtml(q)+'"</div>');
 }
 
 /* ================= actions ================= */
@@ -1187,6 +1283,7 @@ homeBody.addEventListener("change", ev=>{
 
 document.getElementById("allOn").addEventListener("click", ()=>bulkLights(true));
 document.getElementById("allOff").addEventListener("click", ()=>bulkLights(false));
+document.getElementById("staleRetry").addEventListener("click", ()=>refresh(true));
 
 let nightArmed = false, nightTimer = null;
 const nightBtn = document.getElementById("nightBtn");
@@ -1210,6 +1307,10 @@ nightBtn.addEventListener("click", ()=>{
 document.getElementById("lightSearch").addEventListener("input", ev=>{
   lightQuery = ev.target.value.trim().toLowerCase();
   renderHome();
+});
+document.getElementById("entSearch").addEventListener("input", ev=>{
+  entFilter = ev.target.value.trim().toLowerCase();
+  renderEntityManager();
 });
 
 document.getElementById("coversList").addEventListener("click", ev=>{
@@ -1274,17 +1375,17 @@ document.getElementById("testBtn").addEventListener("click", async ()=>{
   }catch(err){
     setDot("err");
     if(String(err.message)==="AUTH") toast("הטוקן לא תקין","err");
-    else if(isMixedBlocked()) toast("חסימת דפדפן: https מול http — ראו אזהרה למעלה","err");
-    else toast("לא הצלחתי להגיע לכתובת","err");
-    document.getElementById("mixedWarn").style.display = isMixedBlocked()&&cfg.url ? "" : "none";
+    else toast("לא הצלחתי להגיע אל "+baseUrl(),"err");
   }finally{
     btn.disabled = false; btn.textContent = "בדיקת חיבור";
+    updateConnNotices();
   }
 });
 
 document.getElementById("saveBtn").addEventListener("click", ()=>{
   applyFormToCfg(true);
   toast("נשמר ✓","ok");
+  updateConnNotices();
   refresh(true).then(startPolling);
 });
 
@@ -1343,6 +1444,8 @@ if(!hasConfig()){
   refresh(true);
 }
 startPolling();
+/* גם אם הרענון הראשון נכשל בשקט - השורה בכותרת תמשיך לשקף את האמת */
+setInterval(renderFreshness, 10000);
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible" && hasConfig()) refresh(false);
 });
